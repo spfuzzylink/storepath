@@ -4,6 +4,14 @@ Storepath is a deterministic evaluator. It maps workload requirements and an exp
 
 The reusable API is `storepath.Evaluate(Input) (Decision, error)`. The CLI decodes JSON, calls that API, and renders the result. `evaluate FILE` handles one input; `demo` evaluates the bundled synthetic cases. `demo --json` makes those results machine-readable.
 
+## Browser delivery
+
+The interactive browser product uses the same Go evaluator, compiled to WebAssembly through `cmd/storepath-web`. Its JavaScript interface passes JSON through the library's strict decoder and returns either a decision or an error. The UI does not maintain a separate cost formula or substitute preset results for evaluation.
+
+`make browser-demo` creates `dist/storepath-demo.html` and an identical `dist/site/index.html`. The build embeds the WebAssembly module, the matching Go runtime, six explicit JSON fixtures, CSS, JavaScript, and license notices in one file. It reads an explicit public-file allowlist and rejects symlinked sources and ambiguous template markers. JSON data is escaped for inline-script safety. No cloud credentials, npm dependencies, local server, CDN, or network request is needed to evaluate a workload after downloading the HTML. GitHub Pages serves the same artifact for the hosted demo.
+
+`make test-demo` executes the actual HTML's embedded engine under Node and compares its complete decisions with the native CLI, including cost edits, semantic incompatibility, latency evidence, and malformed-input boundaries. A separate development-only Playwright check (`npm run test:ui`) opens the downloaded file offline and verifies visible decisions, edits, errors, exported reports, and responsive layout. CI gates release publication on both browser checks as well as the existing native-platform and source checks. These checks do not turn illustrative inputs into production benchmarks.
+
 ## Input contract
 
 The top-level document contains `schema_version: 1`, `workload`, and `rates`.

@@ -22,4 +22,7 @@
 .DS_Store
 coverage.out
 __pycache__/
+/node_modules/
+/test-results/
+/playwright-report/
 *.py[cod]

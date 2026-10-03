@@ -1,7 +1,7 @@
 # Contributing to Storepath
 
 Storepath is an experimental, local decision-support library for choosing block
-or object storage from workload constraints and explicit cost assumptions.
+object, or hybrid storage from workload constraints and explicit cost assumptions.
 Start with the [use cases](docs/use-cases.md), [architecture](docs/architecture.md),
 and [cost model](docs/cost-model.md). Use synthetic data in examples and reports.
 
@@ -18,6 +18,26 @@ detector. From a full clone:
 ```sh
 make check
 make demo
+```
+
+For the browser demo, use the pinned release Go toolchain and Node.js 24 or newer:
+
+```sh
+make browser-demo
+make test-demo
+```
+
+Open `dist/storepath-demo.html` directly in a browser. UI sources live in `web/`;
+the WebAssembly adapter in `cmd/storepath-web` calls the same strict decoder and
+evaluator as the CLI. Keep pricing and compatibility logic in the Go library.
+
+The release also exercises the actual interface offline in Chromium. Playwright
+is a development dependency only; it is never included in the downloadable demo:
+
+```sh
+npm ci
+npx playwright install chromium
+npm run test:ui
 ```
 
 Add focused regression tests for behavior changes. Explain the problem, resulting
@@ -43,8 +63,9 @@ python3 scripts/package.py
 
 Review the exact source, notices, archive contents, and checksums before tagging.
 The tag must match `VERSION`. CI publishes an explicit prerelease only after all
-four native platform jobs, the Go 1.26 compatibility job, and public-source/history
-checks succeed. No release or archive can prove the accuracy of workload inputs.
+four native platform jobs, the Go 1.26 compatibility job, the embedded browser
+engine parity checks, and public-source/history checks succeed. The same gates
+protect the hosted demo. No release or archive can prove the accuracy of workload inputs.
 
 Contributions use the repository's [MIT license](LICENSE). Preserve upstream
 attributions. Report security concerns using [SECURITY.md](SECURITY.md).

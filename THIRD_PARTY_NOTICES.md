@@ -2,11 +2,11 @@
 
 Storepath's own source is MIT licensed; see `LICENSE`. Release and installer scripts adapt MIT-licensed code from [Questlock](https://github.com/spfuzzylink/questlock), Copyright (c) 2026 spfuzzylink contributors.
 
-The library and executable use only the Go standard library. There are no external Go modules. Prebuilt executables include Go runtime and standard-library code under the notices below.
+The library and executables use only the Go standard library. There are no external Go modules. Prebuilt native and WebAssembly executables include Go runtime and standard-library code under the notices below. The browser demo also embeds `lib/wasm/wasm_exec.js` from the same Go toolchain, covered by the Go LICENSE below.
 
-Generated with `python3 scripts/generate-notices.py` from `go list -deps -json -mod=readonly ./cmd/storepath` for all production targets with `CGO_ENABLED=0` and default build experiments. Upstream notice texts are preserved verbatim.
+Generated with `python3 scripts/generate-notices.py` from `go list -deps -json -mod=readonly` on `./cmd/storepath` and `./cmd/storepath-web` for all production targets with `CGO_ENABLED=0` and default build experiments. Upstream notice texts are preserved verbatim.
 
-Toolchain: `go1.27.1`. Targets: `darwin/amd64`, `darwin/arm64`, `linux/amd64`, `linux/arm64`.
+Toolchain: `go1.27.1`. Targets: `darwin/amd64`, `darwin/arm64`, `js/wasm`, `linux/amd64`, `linux/arm64`.
 
 Regenerate and review this document when changing the toolchain, build configuration, or dependencies. It is a package-level inventory, not a function-level linking report.
 

@@ -1,7 +1,8 @@
 GO ?= go
+NODE ?= node
 VERSION := $(shell cat VERSION)
 
-.PHONY: build test check demo install package
+.PHONY: build test check demo install package browser-demo test-demo
 
 build:
 	$(GO) build -trimpath -ldflags '-X main.version=$(VERSION)' -o bin/storepath ./cmd/storepath
@@ -24,3 +25,9 @@ install:
 
 package:
 	python3 scripts/package.py
+
+browser-demo:
+	python3 scripts/build-demo.py
+
+test-demo: browser-demo
+	$(NODE) scripts/test-demo.mjs

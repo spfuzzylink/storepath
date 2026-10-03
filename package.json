@@ -1,0 +1,15 @@
+{
+  "name": "storepath-browser-checks",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Development-only browser release checks; the demo has no npm runtime dependencies.",
+  "scripts": {
+    "test:ui": "node scripts/test-ui.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

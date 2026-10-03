@@ -1,8 +1,19 @@
-# Customer use cases
+# Six storage decisions to explore
 
-These are synthetic design scenarios, not customer case studies. Fixture sizes, traffic, prices, and outcomes demonstrate the evaluator. They are not measured latency, deployed architectures, or achieved savings.
+Start with the problem closest to your workload. [Open the interactive demo](https://spfuzzylink.github.io/storepath/) to change the inputs and inspect the decision, or [download the single-file demo](https://github.com/spfuzzylink/storepath/releases/download/v0.2.0/storepath-demo.html) for a walkthrough without an internet connection after download.
 
-Run `bin/storepath demo` for the six cases or `bin/storepath evaluate examples/NAME.json` for one complete JSON decision. The example files are the source of truth for quantities and rates.
+| Your question | Start here | What to inspect |
+| --- | --- | --- |
+| Can my database use direct object APIs? | Transactional database | The write contract that makes object storage incompatible |
+| Can we retain more metrics without keeping every byte on block storage? | Telemetry retention | Mutable state, sealed data, cache, and request cost |
+| Where should immutable backups live? | Backup repository | Capacity cost and the restore traffic assumption |
+| Do selective reads require block storage? | Analytics range reads | Range GETs and the number of billable operations |
+| Could a cache make an object service cheaper? | Hot object service | Cache cost and explicitly supplied origin traffic |
+| Which plan meets a tight latency budget? | Strict latency | Missing evidence before a recommendation can qualify |
+
+For a repeatable command-line walkthrough, run `bin/storepath demo`; for a complete JSON decision, run `bin/storepath evaluate examples/NAME.json`. All six use the same Go evaluator as the browser.
+
+These are synthetic design scenarios, not customer case studies. Fixture sizes, traffic, and rates are illustrative. The example files are the source of truth; outcomes are not measured latency, deployed architectures, or achieved savings.
 
 ## 1. Transactional database: preserve the write contract
 
@@ -23,6 +34,10 @@ Object-native databases and specialized object storage modes are outside this ex
 **Fixture:** [telemetry-retention.json](../examples/telemetry-retention.json). Expected result: **hybrid**.
 
 The application can separate mutable ingestion state from immutable sealed blocks. Storepath prices the mutable head/WAL and explicit cache on block storage, and all immutable retained data on object storage. This resembles the storage boundaries documented by [Cortex](https://cortexmetrics.io/docs/blocks-storage/), whose [store gateway](https://cortexmetrics.io/docs/blocks-storage/store-gateway/) also keeps index headers locally.
+
+**Demo walkthrough:** the preset includes 100 GiB of mutable state, 10,000 GiB of retained immutable data, and a 100 GiB hybrid cache. It models **$808.00/month for block** and **$247.31/month for hybrid**, a **$560.69 modeled monthly difference**. Direct object storage is incompatible with the declared mutable-write contract. The difference uses synthetic prices and excludes unmodeled costs; it is not realized savings or a TCO comparison.
+
+Increase retention, then increase hybrid origin reads. Inspect which line items move and whether the recommendation changes. Export the report with your revised inputs to make the assumptions reviewable.
 
 Measure ingestion recovery, block shipping, query range fan-out, compaction operations, label cardinality effects, and cold-cache behavior. Retained bytes do not imply a particular query latency. Cache capacity does not imply a particular hit ratio. Enter the hybrid's origin operations explicitly and include compaction and retry traffic.
 
@@ -71,6 +86,30 @@ When clients consume the same payload outside the deployment, account for delive
 The evaluator can show compatibility and costs, but cannot infer tail latency from capacity prices or backend names. Supply `measured_p99_ms` for each eligible candidate after a representative experiment. With a target, only candidates with passing supplied evidence can satisfy it.
 
 Use equivalent request mixes, data sizes, concurrency, and observation windows. Report cache state and examine failure/recovery behavior separately. A single favorable p99 number is not an availability commitment or proof of production readiness.
+
+## Kubernetes and AI infrastructure workflows
+
+### Kubernetes: decide the data contract before choosing a volume
+
+| Application and end customer | Start with | What the comparison helps decide | Validate next |
+| --- | --- | --- | --- |
+| A StatefulSet database serving customer transactions | Transactional database | Whether the filesystem, in-place update, and WAL contract require a block-backed filesystem | CSI driver behavior, access modes, topology, failover, snapshots, backup and restore |
+| A monitoring service retaining tenant metrics for incident investigation | Telemetry retention | How much active state/cache stays on block versus sealed history in object storage | Recovery, query fan-out, cardinality, cold-cache p99, and explicit origin traffic |
+| An application backup service protecting tenant data | Backup repository | How retained immutable capacity and restore operations affect the estimate | Application-consistent snapshots, restore time, retention policy, and failure drills |
+
+[Kubernetes PersistentVolumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) distinguish filesystem and raw-block volume modes and expose provider-dependent access modes. This model's block candidate means a block volume with an application-compatible filesystem; it does not interpret a StorageClass, provision a PVC, verify multi-node access, or predict rescheduling behavior. Object access means the application can use object APIs directly. A bucket is not automatically a replacement for a mounted filesystem.
+
+### AI: separate retained artifacts from the active working set
+
+| Application and end customer | Start with | What to supply | Validate next |
+| --- | --- | --- | --- |
+| Training datasets read through object-native loaders | Analytics range reads | Immutable dataset size, range-request fan-out, retrieval and network traffic | Data-loader throughput, small-file overhead, parallelism, and GPU idle time |
+| Sealed checkpoints retained for restart and reproducibility | Backup repository; telemetry retention if local mutable staging remains | Checkpoint capacity, upload/restore operations, staging footprint, and copy counts | Checkpoint completion/atomicity, restart time, upload overlap, and recovery correctness |
+| Model weights or artifacts repeatedly loaded by serving workers | Hot object service | Object footprint, explicit block cache size, post-cache origin requests, serving compute and network costs | Cold starts, cache eviction, fleet rollout bursts, and end-to-end p99 |
+
+For example, [SageMaker's checkpoint workflow](https://docs.aws.amazon.com/sagemaker/latest/dg/model-checkpoints.html) separates local checkpoints from S3 synchronization. That illustrates a lifecycle boundary worth modeling; it does not make this tool a SageMaker integration. If a training framework requires a POSIX or distributed filesystem, retain that constraint. [FSx for Lustre's S3 integration](https://docs.aws.amazon.com/fsx/latest/LustreGuide/fsx-data-repositories.html) is a distinct managed filesystem design outside this direct-object model.
+
+These workflows reuse the shipped six scenarios and evaluator. Storepath estimates the explicit storage components and evaluates supplied latency evidence; it does not estimate GPU utilization, training speed, cache hit ratios, or checkpoint correctness. Use the exported input and decision to plan the workload-specific benchmark before changing production placement.
 
 ## Turning an example into a design decision
 

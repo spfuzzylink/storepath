@@ -1,6 +1,6 @@
 # Security and trust boundaries
 
-Storepath is an experimental local library and command-line tool. It evaluates
+Storepath is an experimental local library, command-line tool, and browser demo. It evaluates
 provided workload assumptions and produces recommendations and modeled costs.
 It does not provision, move, read, or delete cloud objects or volumes. Runtime
 commands require no cloud credentials, network service, or cloud account.
@@ -10,6 +10,12 @@ when filing issues or sharing results. The host OS, Go runtime, operator, input
 files, and calling application are trusted. Storepath is not an isolation boundary
 and has no authentication or tenant separation; those belong to its caller.
 Recommendations are only as reliable as the inputs and the documented model.
+
+The browser demo embeds the Go engine, runtime, and synthetic examples in one HTML
+file. Evaluation makes no network requests and inputs are not uploaded. Exported
+reports contain the supplied assumptions; review them before sharing. Download
+links and source links leave the local demo only when selected. The browser and
+downloaded HTML are trusted code, just as the native executable is.
 
 ## Release and installer boundaries
 

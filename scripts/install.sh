@@ -5,7 +5,7 @@ set -eu
 storepath_script_dir=$(CDPATH= cd -P "$(dirname "$0")" && pwd)
 storepath_repo_dir=$(CDPATH= cd -P "$storepath_script_dir/.." && pwd)
 storepath_install_dir="$storepath_repo_dir/bin"
-storepath_version=0.1.0
+storepath_version=0.2.0
 if [ -r "$storepath_repo_dir/VERSION" ]; then
   storepath_version=$(cat "$storepath_repo_dir/VERSION")
 fi
@@ -19,7 +19,7 @@ storepath_usage() {
   cat <<'USAGE'
 Usage: sh scripts/install.sh [--version vX.Y.Z] [--dir DIRECTORY]
 
-Install the pinned release from VERSION (default 0.1.0) into this repo's bin/.
+Install the pinned release from VERSION (default 0.2.0) into this repo's bin/.
 Supported platforms: macOS and Linux, amd64 and arm64. No sudo is used.
 An optional destination directory may contain spaces; quote it in your shell.
 

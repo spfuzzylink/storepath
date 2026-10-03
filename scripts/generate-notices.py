@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventory the four standard-library-only builds and preserve upstream notices."""
+"""Inventory the native and browser builds and preserve upstream notices."""
 
 import argparse
 import json
@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGETS = ("darwin/amd64", "darwin/arm64", "linux/amd64", "linux/arm64")
+TARGETS = ("darwin/amd64", "darwin/arm64", "linux/amd64", "linux/arm64", "js/wasm")
 NOTICE_NAME = re.compile(r"(?:LICEN[CS]E|COPYING|NOTICE|PATENTS)(?:[._-].*)?", re.I)
 
 
@@ -43,8 +43,9 @@ def inspect_go(go):
         graphs = {}
         for target in TARGETS:
             env["GOOS"], env["GOARCH"] = target.split("/")
+            command = "./cmd/storepath-web" if target == "js/wasm" else "./cmd/storepath"
             data = subprocess.check_output(
-                [go, "list", "-deps", "-json", "-mod=readonly", "./cmd/storepath"],
+                [go, "list", "-deps", "-json", "-mod=readonly", command],
                 cwd=ROOT, env=env, text=True, stderr=subprocess.PIPE)
             graphs[target] = parse_go_json(data)
         return graphs, Path(metadata["GOROOT"]), metadata["GOVERSION"]
@@ -96,9 +97,11 @@ def render_notices(graphs, goroot, go_version):
         "Storepath's own source is MIT licensed; see `LICENSE`. Release and installer "
         "scripts adapt MIT-licensed code from [Questlock](https://github.com/spfuzzylink/questlock), "
         "Copyright (c) 2026 spfuzzylink contributors.\n\n",
-        "The library and executable use only the Go standard library. There are no external Go modules. "
-        "Prebuilt executables include Go runtime and standard-library code under the notices below.\n\n",
-        "Generated with `python3 scripts/generate-notices.py` from `go list -deps -json -mod=readonly ./cmd/storepath` "
+        "The library and executables use only the Go standard library. There are no external Go modules. "
+        "Prebuilt native and WebAssembly executables include Go runtime and standard-library code under the notices below. "
+        "The browser demo also embeds `lib/wasm/wasm_exec.js` from the same Go toolchain, covered by the Go LICENSE below.\n\n",
+        "Generated with `python3 scripts/generate-notices.py` from `go list -deps -json -mod=readonly` "
+        "on `./cmd/storepath` and `./cmd/storepath-web` "
         "for all production targets with `CGO_ENABLED=0` and default build experiments. "
         "Upstream notice texts are preserved verbatim.\n\n",
         "Toolchain: `" + go_version + "`. Targets: " + ", ".join("`" + t + "`" for t in sorted(graphs)) + ".\n\n",
@@ -127,10 +130,10 @@ def main():
         if args.check:
             if not output.is_file() or output.read_bytes() != expected:
                 raise NoticeError("THIRD_PARTY_NOTICES.md is stale; use the pinned release toolchain to regenerate and review it")
-            print("Third-party notices match all four production dependency graphs and toolchain.")
+            print("Third-party notices match all native/browser dependency graphs and toolchain.")
         else:
             output.write_bytes(expected)
-            print("Generated THIRD_PARTY_NOTICES.md for all four production targets.")
+            print("Generated THIRD_PARTY_NOTICES.md for all native/browser production targets.")
     except (NoticeError, OSError, KeyError) as error:
         message = str(error) if isinstance(error, NoticeError) else "cannot read production source metadata"
         print("Notice generation failed: " + message, file=sys.stderr)

@@ -102,10 +102,70 @@ jobs:
           go-version: '1.26.x'
           cache: false
       - run: go test ./...
+  browser-demo:
+    name: Offline browser engine and release HTML
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: '1.27.1'
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install browser test tools
+        run: npm ci
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Build self-contained browser artifact
+        run: python3 scripts/build-demo.py
+      - name: Test actual embedded engine against native CLI
+        run: node scripts/test-demo.mjs
+      - name: Exercise offline browser interactions and exports
+        run: npm run test:ui
+      - name: Retain tested HTML for tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: storepath-browser-demo
+          path: dist/storepath-demo.html
+          if-no-files-found: error
+          retention-days: 7
+      - name: Package tested site for Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: dist/site
+  deploy-pages:
+    name: Publish tested interactive demo
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [public-source, go, minimum-go, browser-demo]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Deploy tested artifact
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
   release:
     name: Publish tested experimental release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [public-source, go, minimum-go]
+    needs: [public-source, go, minimum-go, browser-demo]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -127,12 +187,13 @@ jobs:
         run: |
           cd dist
           test "$(find . -maxdepth 1 -name '*.tar.gz' | wc -l)" -eq 4
-          sha256sum *.tar.gz > checksums.txt
-      - name: Publish archives from successful platform jobs
+          test -s storepath-demo.html
+          sha256sum *.tar.gz storepath-demo.html > checksums.txt
+      - name: Publish tested native archives and offline browser demo
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: >-
-          gh release create "$RELEASE_TAG" dist/*.tar.gz dist/checksums.txt
+          gh release create "$RELEASE_TAG" dist/*.tar.gz dist/storepath-demo.html dist/checksums.txt
           --verify-tag --prerelease --title "Storepath ${RELEASE_TAG}"
           --notes-file docs/release-notes.md

@@ -1,5 +1,19 @@
 # Install and try Storepath
 
+## Start in a browser
+
+**[Open the interactive demo](https://spfuzzylink.github.io/storepath/)** for an immediate walkthrough. Choose one of six presets, edit the workload, inspect compatible storage options and cost components, and export a report.
+
+For a portable demo:
+
+1. [Download `storepath-demo.html`](https://github.com/spfuzzylink/storepath/releases/download/v0.2.0/storepath-demo.html).
+2. Open the downloaded file in a modern browser with WebAssembly enabled.
+3. Explore **Telemetry retention**, then switch to **Strict latency** to see the evidence gate.
+
+The file embeds the Go evaluator, WebAssembly runtime, examples, styles, and interface. It needs no installation, local server, cloud account, or credentials. After download, evaluation works offline and inputs stay in the browser. The interface evaluates the same Go library used by the CLI; it does not provision infrastructure or contact a cloud provider.
+
+The release includes a SHA-256 checksum for the HTML file. If you verify downloads, compare `shasum -a 256 storepath-demo.html` on macOS or `sha256sum storepath-demo.html` on Linux with its entry in `checksums.txt` from [v0.2.0](https://github.com/spfuzzylink/storepath/releases/tag/v0.2.0).
+
 ## Prebuilt executable from a checkout
 
 On macOS or Linux:
@@ -42,14 +56,14 @@ provided. WSL can use Linux builds but is not a separately validated platform.
 For Linux x86-64, verify the downloaded archive before extracting:
 
 ```sh
-sha256sum storepath_0.1.0_linux_amd64.tar.gz
+sha256sum storepath_0.2.0_linux_amd64.tar.gz
 ```
 
 On macOS use `shasum -a 256` and your platform's archive filename. Compare the result
 with that exact filename's entry in `checksums.txt`, then extract and run:
 
 ```sh
-tar -xzf storepath_0.1.0_linux_amd64.tar.gz
+tar -xzf storepath_0.2.0_linux_amd64.tar.gz
 ./storepath version
 ./storepath demo
 ```
@@ -79,7 +93,7 @@ go build -trimpath -ldflags "-X main.version=$(cat VERSION)" -o bin/storepath ./
 To add the library to an existing Go module:
 
 ```sh
-go get github.com/spfuzzylink/storepath@v0.1.0
+go get github.com/spfuzzylink/storepath@v0.2.0
 ```
 
 Import `github.com/spfuzzylink/storepath`; see the README for the API and runnable
@@ -97,7 +111,7 @@ From an updated checkout, rerun `./scripts/install.sh`. An explicit release and
 destination can be selected with:
 
 ```sh
-./scripts/install.sh --version v0.1.0 --dir ./bin
+./scripts/install.sh --version v0.2.0 --dir ./bin
 ```
 
 The installer stages on the destination filesystem, preserves an existing binary
@@ -114,6 +128,15 @@ archives. Repeat `--target` to select particular targets. Outputs go into ignore
 `dist/`. The builder verifies notices, uses an exact document allowlist, disables
 CGO, strips build paths, and embeds the release version.
 
-A matching `vX.Y.Z` tag publishes an explicit experimental release only after the
-four matching native platform jobs, Go 1.26 compatibility job, and full-history
-publication guard pass. Release jobs publish the same archives exercised in CI.
+Run `make browser-demo` to produce `dist/storepath-demo.html` and an identical
+`dist/site/index.html`. The builder embeds the Go WebAssembly engine, matching Go
+runtime, UI, examples, and licenses into one file. `make test-demo` rebuilds it
+and checks the actual embedded engine against the native CLI. Browser artifact
+builds use Go 1.27.1; the parity check uses Node.js 24 in CI. Running the finished
+HTML requires neither tool.
+
+A matching `vX.Y.Z` tag publishes an explicit experimental release only after
+four native platform jobs, Go 1.26 compatibility, embedded-browser-engine checks,
+and the full-history publication guard pass. Release jobs publish the same native
+archives and HTML exercised in CI, with a combined checksum manifest. On `main`,
+the same required checks gate publication of the built site to GitHub Pages.

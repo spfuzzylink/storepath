@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BlockOrBucket is an interactive storage decision workbench for Kubernetes services, observability, and AI data workflows. Compare block, object, and hybrid plans by access semantics, explicit costs, and latency evidence. Powered by Storepath; runs offline.">
+  <meta name="theme-color" content="#f6f4ed">
+  <title>BlockOrBucket — choose storage with a reason.</title>
+  <style>__STOREPATH_STYLE__</style>
+</head>
+<body>
+  <a class="skip-link" href="#workbench">Skip to storage workbench</a>
+  <header class="site-header shell">
+    <a href="#" class="brand" aria-label="BlockOrBucket home"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 4h9v10h13v14h-9V18H5z" fill="currentColor"/><path d="M18 4h9v6h-9z" fill="#d44b25"/></svg><span>BlockOrBucket<span class="brand-period">.</span></span></a>
+    <div class="header-right"><span class="version" data-version>Preview</span><a class="text-link" href="https://github.com/spfuzzylink/blockorbucket" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></div>
+  </header>
+
+  <main>
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot"></span> THE STORAGE DECISION WORKBENCH</p>
+        <h1 id="hero-title">The right storage.<br><span>Before the first provision.</span></h1>
+        <p class="hero-description">Block, object, or a little of both? Start with your access patterns. See what fits, what it costs, and what still needs evidence.</p>
+        <p class="hero-audience">For Kubernetes services, observability, and AI data workflows.</p>
+        <div class="hero-actions"><a class="button primary" href="#workbench">Try a scenario <span aria-hidden="true">↓</span></a><a class="button secondary" data-demo-download href="https://github.com/spfuzzylink/blockorbucket/releases/download/v0.1.0/blockorbucket-demo.html">Download offline demo <span aria-hidden="true">↗</span></a></div>
+        <p class="hero-footnote">One HTML file. No account, cloud credentials, or install.</p>
+      </div>
+      <div class="hero-diagram" aria-label="Evaluate access semantics, then costs, then latency evidence to select a storage plan">
+        <div class="diagram-heading"><span>DECISION PATH</span><span class="diagram-index">01—03</span></div>
+        <ol class="decision-path"><li><span class="step-number">01</span><div><strong>Does it fit?</strong><span>Access semantics</span></div><span aria-hidden="true">↘</span></li><li><span class="step-number">02</span><div><strong>What does it cost?</strong><span>Explicit monthly assumptions</span></div><span aria-hidden="true">↘</span></li><li><span class="step-number">03</span><div><strong>Where is the evidence?</strong><span>Measured p99, when required</span></div><span aria-hidden="true">↘</span></li></ol>
+        <div class="diagram-plans"><span><i class="mini-block" aria-hidden="true"></i>Block</span><span><i class="mini-object" aria-hidden="true"></i>Object</span><span><i class="mini-hybrid" aria-hidden="true"></i>Hybrid</span></div>
+      </div>
+    </section>
+
+    <section class="workbench-section" id="workbench" aria-labelledby="workbench-title">
+      <div class="shell">
+        <div class="section-heading"><div><p class="eyebrow">A REAL ENGINE. A SMALL STARTING POINT.</p><h2 id="workbench-title">Make the tradeoff visible.</h2></div><div class="engine-badge" id="engine-status" role="status"><span class="status-dot"></span><span>Starting local engine…</span></div></div>
+        <p class="section-intro">Pick a synthetic workload, change an assumption, and follow the decision. All calculations run on your device using the Storepath Go library.</p>
+        <div id="presets" class="preset-grid" role="group" aria-label="Choose a synthetic workload"></div>
+        <div class="workbench-layout">
+          <aside class="input-panel" aria-labelledby="input-title">
+            <div class="panel-heading"><div><span class="panel-index">01 / INPUT</span><h3 id="input-title">Your workload</h3></div><button class="quiet-button" id="reset-input" type="button">Reset</button></div>
+            <p class="input-caption" id="scenario-description"></p>
+            <form id="workload-form" novalidate>
+              <fieldset id="quick-controls" class="unboxed-fieldset" disabled>
+                <legend class="sr-only">Workload assumptions</legend>
+                <label class="field" for="workload-name"><span>Workload name</span><input id="workload-name" data-path="workload.name" type="text" maxlength="200" autocomplete="off"></label>
+                <div class="field-pair">
+                  <label class="field" for="mutable-gib"><span>Mutable data <small>GiB</small></span><input id="mutable-gib" data-path="workload.mutable_gib" type="number" min="0" step="any" inputmode="decimal"></label>
+                  <label class="field" for="immutable-gib"><span>Immutable data <small>GiB</small></span><input id="immutable-gib" data-path="workload.immutable_gib" type="number" min="0" step="any" inputmode="decimal"></label>
+                </div>
+                <p class="field-help">Separate logical footprints. Retained objects stay fully stored even when cached.</p>
+                <label class="field" for="mutation"><span>How the application writes</span><select id="mutation" data-path="workload.mutation"><option value="immutable">Immutable objects</option><option value="replace_object">Whole-object replacement</option><option value="append_and_seal">Append, then seal</option><option value="random_in_place">Random in-place updates</option></select></label>
+                <div class="check-fields"><label><input id="requires-posix" data-path="workload.requires_posix" type="checkbox"><span>Requires POSIX filesystem semantics</span></label><label><input id="requires-fsync" data-path="workload.requires_fsync" type="checkbox"><span>Requires fsync-style persistence</span></label><label><input id="split-tiers" data-path="workload.can_split_tiers" type="checkbox"><span>Can separate the active and retained tiers</span></label></div>
+                <details class="input-details"><summary>Latency evidence <span class="details-hint">optional</span></summary><div class="details-body"><p class="field-help">A target without a passing measurement requires benchmarking. Enter your own representative end-to-end results.</p><label class="field" for="target-p99"><span>Target p99 <small>ms</small></span><input id="target-p99" data-path="workload.target_p99_ms" data-optional="true" type="number" min="0" step="any" placeholder="No target" inputmode="decimal"></label><div class="field-pair"><label class="field" for="block-p99"><span>Block p99 <small>ms</small></span><input id="block-p99" data-path="workload.measured_p99_ms.block" data-optional="true" type="number" min="0" step="any" placeholder="Unmeasured" inputmode="decimal"></label><label class="field" for="object-p99"><span>Object p99 <small>ms</small></span><input id="object-p99" data-path="workload.measured_p99_ms.object" data-optional="true" type="number" min="0" step="any" placeholder="Unmeasured" inputmode="decimal"></label></div><label class="field" for="hybrid-p99"><span>Hybrid p99 <small>ms</small></span><input id="hybrid-p99" data-path="workload.measured_p99_ms.hybrid" data-optional="true" type="number" min="0" step="any" placeholder="Unmeasured" inputmode="decimal"></label></div></details>
+                <details class="input-details"><summary>Provisioning &amp; access budgets</summary><div class="details-body"><p class="field-help">Requests and transferred GiB are monthly totals. Hybrid origin traffic is an explicit assumption; changing cache size does not change it automatically.</p><div id="budget-fields"></div></div></details>
+                <details class="input-details"><summary>Rate card <span class="details-hint" id="rate-kind">illustrative</span></summary><div class="details-body"><p class="field-help" id="rate-description"></p><div id="rate-fields"></div></div></details>
+              </fieldset>
+            </form>
+            <details class="input-details json-details" id="json-details"><summary>Full input JSON <span class="details-hint">advanced</span></summary><div class="details-body"><label class="field" for="input-json"><span>Every assumption, in one place</span><textarea id="input-json" rows="16" spellcheck="false" autocapitalize="off" autocomplete="off" disabled aria-describedby="json-help"></textarea></label><p class="field-help" id="json-help">Edit the complete schema, including plan-specific extra costs. Apply changes to recalculate.</p><button id="apply-json" class="button secondary compact" type="button" disabled>Apply JSON</button><p id="json-status" class="field-help" role="status"></p></div></details>
+            <div class="local-note"><span aria-hidden="true">◉</span><span>Local by design. Your inputs are never uploaded.</span></div>
+          </aside>
+
+          <div class="results-panel" aria-labelledby="result-title">
+            <div class="panel-heading"><div><span class="panel-index">02 / DECISION</span><h3 id="result-title">A plan, with the reasoning.</h3></div><div class="export-actions"><button id="export-input" class="quiet-button" type="button" disabled>Input JSON <span aria-hidden="true">↓</span></button><button id="export-report" class="quiet-button" type="button" disabled>Export report <span aria-hidden="true">↓</span></button></div></div>
+            <div id="result-error" class="error-panel" role="alert" hidden></div>
+            <p id="result-announcement" class="sr-only" role="status"></p>
+            <div id="result-output" aria-busy="true"><div class="loading-state"><span class="loading-line"></span><p>Loading the same engine used by the CLI…</p><small>No requests to a cloud provider.</small></div></div>
+            <noscript><p class="error-panel">This interactive demo needs JavaScript and WebAssembly. Download the native CLI from the GitHub release to use Storepath in a terminal.</p></noscript>
+          </div>
+        </div>
+        <div class="principles-row"><div><span>01</span><p><strong>Semantics before price.</strong><br>A cheap plan that breaks the application is not a candidate.</p></div><div><span>02</span><p><strong>Every dollar has an input.</strong><br>Inspect quantities, rates, and the costs that are left out.</p></div><div><span>03</span><p><strong>No measurement, no promise.</strong><br>Latency requirements need representative evidence.</p></div></div>
+      </div>
+    </section>
+
+    <section class="takeaway-section shell" aria-labelledby="takeaway-title"><div><p class="eyebrow">FROM EXPLORATION TO YOUR WORKFLOW</p><h2 id="takeaway-title">Take the decision with you.</h2><p>Export your assumptions and report. Use the same deterministic engine in a Go service, a CLI workflow, or this offline workbench.</p></div><div class="takeaway-actions"><a class="button primary" data-demo-download href="https://github.com/spfuzzylink/blockorbucket/releases/download/v0.1.0/blockorbucket-demo.html">Download the offline demo <span aria-hidden="true">↗</span></a><a class="text-link" data-release-link href="https://github.com/spfuzzylink/storepath/releases/tag/v0.2.0">Storepath CLI &amp; checksums <span aria-hidden="true">↗</span></a><code id="install-command">go get github.com/spfuzzylink/blockorbucket@v0.1.0</code></div></section>
+  </main>
+
+  <footer class="shell site-footer"><div class="footer-line"><span class="footer-brand">BlockOrBucket.</span><p>An open-source planning prototype by <a href="https://github.com/spfuzzylink" target="_blank" rel="noopener noreferrer">Shivam Pathak</a>. Powered by <a href="https://github.com/spfuzzylink/storepath" target="_blank" rel="noopener noreferrer">Storepath</a>.</p><a href="https://github.com/spfuzzylink/blockorbucket" target="_blank" rel="noopener noreferrer">Explore the source <span aria-hidden="true">↗</span></a></div><p class="footer-caveat">Synthetic examples and caller-supplied estimates. No provider is queried. Cost differences are modeled, not realized savings or a total cost of ownership comparison. Availability, durability, and migration readiness require a separate design review.</p><details class="license-details"><summary>License &amp; third-party notices</summary><pre>__STOREPATH_NOTICES__</pre></details></footer>
+
+  <script id="storepath-config">window.STOREPATH_PRESETS=__STOREPATH_PRESETS__;window.STOREPATH_VERSION="__STOREPATH_VERSION__";</script>
+  <script id="storepath-wasm" type="application/octet-stream">__STOREPATH_WASM_BASE64__</script>
+  <script id="storepath-runtime">__STOREPATH_RUNTIME__</script>
+  <script>__STOREPATH_BOOT__</script>
+  <script>__STOREPATH_APP__</script>
+</body>
+</html>
