@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-source:
+    name: Public source and history
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test publication guard
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Inspect tracked source and full reachable history
+        run: python3 scripts/check-public-source.py
+  go:
+    name: Go / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: linux/amd64
+            suffix: linux_amd64
+          - os: ubuntu-24.04-arm
+            target: linux/arm64
+            suffix: linux_arm64
+          - os: macos-15-intel
+            target: darwin/amd64
+            suffix: darwin_amd64
+          - os: macos-15
+            target: darwin/arm64
+            suffix: darwin_arm64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: '1.27.1'
+          cache: false
+      - name: Check Go formatting
+        run: test -z "$(gofmt -l $(find . -name '*.go' -not -path './.git/*'))"
+      - name: Vet
+        run: go vet ./...
+      - name: Test with race detector
+        run: go test -race ./...
+      - name: Test installer and archive boundaries
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Build release archive
+        env:
+          PACKAGE_TARGET: ${{ matrix.target }}
+        run: python3 scripts/package.py --target "$PACKAGE_TARGET"
+      - name: Verify and exercise the packaged executable
+        env:
+          PACKAGE_SUFFIX: ${{ matrix.suffix }}
+        run: |
+          cd dist
+          if command -v sha256sum >/dev/null; then
+            sha256sum -c checksums.txt
+          else
+            shasum -a 256 -c checksums.txt
+          fi
+          mkdir unpacked
+          tar -xzf "storepath_$(cat ../VERSION)_${PACKAGE_SUFFIX}.tar.gz" -C unpacked
+          test "$(unpacked/storepath version)" = "$(cat ../VERSION)"
+          unpacked/storepath help
+          unpacked/storepath demo
+      - name: Retain tested archive for tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: storepath-${{ matrix.suffix }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+  minimum-go:
+    name: Minimum Go 1.26
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: '1.26.x'
+          cache: false
+      - run: go test ./...
+  release:
+    name: Publish tested experimental release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [public-source, go, minimum-go]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: test "$RELEASE_TAG" = "v$(cat VERSION)"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: storepath-*
+          path: dist
+          merge-multiple: true
+      - name: Create checksum manifest
+        run: |
+          cd dist
+          test "$(find . -maxdepth 1 -name '*.tar.gz' | wc -l)" -eq 4
+          sha256sum *.tar.gz > checksums.txt
+      - name: Publish archives from successful platform jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG" dist/*.tar.gz dist/checksums.txt
+          --verify-tag --prerelease --title "Storepath ${RELEASE_TAG}"
+          --notes-file docs/release-notes.md
