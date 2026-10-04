@@ -1,5 +1,7 @@
 // Package storepath evaluates block, direct object API, and hybrid storage plans.
 // It is a deterministic planning library, not a storage driver or cloud client.
+//
+// Deprecated: use github.com/spfuzzylink/blockorbucket for new integrations.
 package storepath
 
 import (

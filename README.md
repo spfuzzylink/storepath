@@ -1,6 +1,12 @@
 # Storepath
 
-The storage decision engine behind **[BlockOrBucket](https://github.com/spfuzzylink/blockorbucket)**. Existing Storepath imports, CLI commands, and releases remain supported; BlockOrBucket adds a product interface and a new Go entry point using this same evaluator.
+> **Deprecated — development has moved to [BlockOrBucket](https://github.com/spfuzzylink/blockorbucket).**
+>
+> BlockOrBucket now contains the standalone Go library, native CLI, and offline browser demo. Use it for new integrations. Storepath's published tags, imports, binaries, and release downloads remain available; no existing release has been rewritten or removed.
+>
+> **[Try BlockOrBucket](https://spfuzzylink.github.io/blockorbucket/)** · **[Go library and downloads](https://github.com/spfuzzylink/blockorbucket)** · **[Migration guide](https://github.com/spfuzzylink/blockorbucket/blob/main/docs/migration.md)**
+
+The documentation below describes the retained Storepath release. Active development happens in BlockOrBucket.
 
 ## Choose where your data belongs.
 

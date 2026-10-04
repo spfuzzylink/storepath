@@ -1,5 +1,7 @@
 # Contributing to Storepath
 
+Storepath is deprecated. Please direct new contributions to [BlockOrBucket](https://github.com/spfuzzylink/blockorbucket). The instructions below describe the retained source.
+
 Storepath is an experimental, local decision-support library for choosing block
 object, or hybrid storage from workload constraints and explicit cost assumptions.
 Start with the [use cases](docs/use-cases.md), [architecture](docs/architecture.md),
